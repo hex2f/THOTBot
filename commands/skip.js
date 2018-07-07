@@ -9,7 +9,7 @@ const handle = async (args, msg, bot) => {
         if (queue === undefined || queue === null) { return }
 
         if (queue.requestedBy !== msg.author.id || msg.member.roles.last().calculatedPosition < thot.client.guilds.get(msg.guild.id).members.get(thot.client.user.id).roles.last().calculatedPosition) {
-            msg.channel.send(`:x: Only the person who requested can skip.`)
+            msg.channel.send(`😞 Only the person who requested can skip.`)
             return
         }
         let vchannel = thot.client.guilds.get(queue.server).channels.get(queue.voice)

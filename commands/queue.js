@@ -11,6 +11,11 @@ const handle = async (args, msg, bot) => {
             return
         }
 
+        if (msg.member.roles.last().calculatedPosition < thot.client.guilds.get(msg.guild.id).members.get(thot.client.user.id).roles.last().calculatedPosition) {
+            msg.channel.send(`😞 You don't have access to that command.`)
+            return
+        }
+
         let str = ':notes: **The Current Queue**'
         
         queue.forEach(q => str += `\n**[${q.title}]** - Requested by *${q.requestedByName}*`)

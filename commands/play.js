@@ -59,7 +59,7 @@ const handleQueue = async (server) => {
         });
     } catch (e) {
         await Queue.findOneAndRemove({server}, {sort: {added: 1 }})
-        channel.send(`:x: Error joining voice channel.\n\`${e.message}\``)
+        channel.send(`😞 Error joining voice channel.\n\`${e.message}\``)
         console.error(e)
     }
 }
@@ -69,11 +69,11 @@ const handle = async (args, msg, bot) => {
         if(!thot) thot = bot
         console.log(args)
         if(!msg.channel.guild) {
-            msg.channel.send(":x: This command can only be run in a server.");
+            msg.channel.send("😞 This command can only be run in a server.");
             return;
         }
         if(!msg.member.voiceChannel) {
-            msg.channel.send(":x: You are not in a voice channel.");
+            msg.channel.send("😞 You are not in a voice channel.");
             return;
         }
 
@@ -105,7 +105,7 @@ const handle = async (args, msg, bot) => {
         } else {
             let searchResults = await search(args.join(' '), 1)
             if(!searchResults || searchResults.items.length === 0) {
-                msg.channel.send(":x: No results.");
+                msg.channel.send("😞 No results.");
                 return;
             }
             id = searchResults.items[0].id.videoId
@@ -114,7 +114,7 @@ const handle = async (args, msg, bot) => {
         }
         
         if (!ytdl.validateID(id)) {
-            msg.channel.send(`:x: An error occured\n\`${id} isnt a valid ID.\``);
+            msg.channel.send(`😞 An error occured\n\`${id} isnt a valid ID.\``);
             return;
         }
 
