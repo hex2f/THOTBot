@@ -9,20 +9,6 @@ const { Queue } = require('../dbmodels')
 const youTube = new YouTube()
 youTube.setKey('AIzaSyCp0bWktjYaLcmrooSzlAxSuydt7zy2MEY')
 
-const getById = async (id) => {
-  let result = await new Promise(function (resolve, reject) {
-    youTube.getById(id, function (err, res) {
-      if (err) {
-        reject(err)
-      } else {
-        resolve(res)
-      }
-    })
-  })
-
-  return result
-}
-
 const search = async (query, amount = 2) => {
   let result = await new Promise(function (resolve, reject) {
     youTube.search(query, amount, {type: 'video'}, function (err, res) {
@@ -39,7 +25,7 @@ const search = async (query, amount = 2) => {
 
 const handleQueue = async (server) => {
   let queue = await Queue.findOne({server}, null, {sort: { added: 1 }})
-  console.log('queue', queue)
+  console.log(queue)
 
   let channel = thot.client.guilds.get(queue.server).channels.get(queue.channel)
   let vchannel = thot.client.guilds.get(queue.server).channels.get(queue.voice)
@@ -79,75 +65,69 @@ const handle = async (args, msg, bot) => {
 
     let id
     let title
-    let length
-    let skip
 
-    if (args.join(' ').indexOf('watch?v=') > -1) {
-      id = args.join(' ').split('watch?v=')[1]
-      if (id.indexOf('&t=') > -1) {
-        skip = id.split('&t=')[1]
-        id = id.split('&t=')[0]
-      }
-      console.log(id)
-      let vid = (await getById(id)).items[0]
-      title = vid.snippet.title
-
-      console.log(1, id, title)
-    } else if (args.join(' ').indexOf('youtu.be/') > -1) {
-      id = args.join(' ').split('youtu.be/')[1]
-      if (id.indexOf('?t=') > -1) {
-        skip = id.split('?t=')[1]
-        id = id.split('?t=')[0]
-      }
-      let vid = (await getById(id)).items[0]
-      title = vid.snippet.title
-      console.log(2, id, title)
-    } else {
-      let searchResults = await search(args.join(' '), 1)
-      if (!searchResults || searchResults.items.length === 0) {
-        msg.channel.send('😞 No results.')
-        return
-      }
-      id = searchResults.items[0].id.videoId
-      title = searchResults.items[0].snippet.title
-      console.log(3, id, title)
-    }
-
-    if (!ytdl.validateID(id)) {
-      msg.channel.send(`😞 An error occured\n\`${id} isnt a valid ID.\``)
+    let searchResults = await search(args.join(' '), 9)
+    if (!searchResults || searchResults.items.length === 0) {
+      msg.channel.send('😞 No results.')
       return
     }
 
-    console.log(msg.member.voiceState)
+    let srstr = ':1234: **Search Results:**\n'
 
-    await Queue.create({
-      server: msg.guild.id,
-      channel: msg.channel.id,
-      requestedBy: msg.member.id,
-      requestedByName: msg.member.displayName,
-      voice: msg.member.voiceChannel.id,
-      video: id,
-      title: title
+    let numbers = [':one:', ':two:', ':three:', ':four:', ':five:', ':six:', ':seven:', ':eight:', ':nine:']
+
+    searchResults.items.forEach((search, i) => {
+      srstr += `\n${numbers[i]} **${search.snippet.title}**`
     })
 
-    let queue = await Queue.find({server: msg.guild.id})
+    srstr += '\n\n *write `c` to cancel*'
 
-    if (queue.length === 1) {
-      handleQueue(msg.guild.id)
+    let selectionMsg = msg.channel.send(srstr)
+
+    const handleMsg = async (message) => {
+      if (message.author.id === msg.author.id && [1, 2, 3, 4, 5, 6, 7, 8, 9].indexOf(parseInt(message.content)) > -1) {
+        if (searchResults.items[parseInt(message.content)]) {
+          id = searchResults.items[parseInt(message.content)].id.videoId
+          title = searchResults.items[parseInt(message.content)].snippet.title
+
+          await Queue.create({
+            server: msg.guild.id,
+            channel: msg.channel.id,
+            requestedBy: msg.member.id,
+            requestedByName: msg.member.displayName,
+            voice: msg.member.voiceChannel.id,
+            video: id,
+            title: title
+          })
+
+          let queue = await Queue.find({server: msg.guild.id})
+
+          if (queue.length === 1) {
+            handleQueue(msg.guild.id)
+          }
+
+          msg.channel.send(`:musical_note: *${msg.member.displayName}* added [**${title}**](https://youtu.be/${id}) to the queue.`)
+          thot.client.removeListener('message', handleMsg)
+          selectionMsg.delete()
+        }
+      } else if (message.author.id === msg.author.id && message.content.toLowerCase() === 'n') {
+        thot.client.removeListener('message', handleMsg)
+        selectionMsg.delete()
+      }
     }
 
-    msg.channel.send(`:musical_note: *${msg.member.displayName}* added [**${title}**](https://youtu.be/${id}) to the queue.`)
+    thot.client.on('message', handleMsg)
   } catch (e) {
     console.error(e)
   }
 }
 
 module.exports = {
-  command: 'play',
-  aliases: ['p'],
-  name: 'play',
-  description: 'Add a youtube video to the playback queue.',
-  usage: ['search or url'],
+  command: 'search',
+  aliases: ['y'],
+  name: 'search',
+  description: 'Heh jeo.',
+  usage: ['search query'],
   action: handle,
   init: (t) => { thot = t; console.log(thot) }
 }
